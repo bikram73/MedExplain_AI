@@ -1,4 +1,4 @@
-# Medsense AI ⚕️
+# Medsense AI (Medical Report Summarigozegor)⚕️
 
 ![Medsense AI (Medical Report Summarigozegor)](assets/icon.svg)
 
