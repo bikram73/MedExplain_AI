@@ -103,14 +103,34 @@ Key workflows:
 
 ## Deployment
 
-Frontend
+### Vercel
 
-- Build with `npm run build`. Deploy the `dist/` output to Vercel, Netlify, Cloudflare Pages, or any static host.
+This repo is configured for Vercel deployment with:
 
-Serverless functions
+- `vercel.json` for the build command and route rewrites
+- `api/[...path].ts` as the edge entry that forwards requests to the TanStack Start server
 
-- Supabase Functions (recommended): Use the Supabase CLI to deploy `supabase/functions/summarize-report`.
-- Cloudflare Workers: `wrangler.jsonc` is present if you prefer Cloudflare for SSR or functions.
+Deploy steps:
+
+1. Push the repo to GitHub.
+2. Import the GitHub repo in Vercel.
+3. Set the project root to this workspace.
+4. Add the environment variables from `.env.example` in Vercel Project Settings.
+5. Use the default build command from `vercel.json`.
+
+Important env vars for Vercel:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_URL`
+- `SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `AI_GATEWAY_URL`
+- `AI_API_KEY`
+
+### Supabase Functions
+
+- Use the Supabase CLI to deploy `supabase/functions/summarize-report`.
 
 CI
 
@@ -128,6 +148,7 @@ Current status: The repository lints cleanly (no blocking errors) after formatti
 - Missing env variables: The app will throw an informative error listing missing keys. Check `.env` and `.env.example`.
 - Node engine warnings: If `npm install` warns about `EBADENGINE`, upgrade Node to the required version.
 - Large bundles: PDF worker and pdf.js can create large chunks; consider offloading heavy processing to serverless functions or using a CDN for the worker script.
+- Vercel 404s: Make sure `api/[...path].ts` is present and the Vercel project is using this repo root.
 
 ## Contributing
 
