@@ -1,26 +1,37 @@
 # Medsense AI ⚕️
 
-![Medsense AI Logo (Medical Report Summarizer)](assets/icon.svg)
+![Medsense AI (Medical Report Summarigozegor)](assets/icon.svg)
 
-Medsense AI is a lightweight, modern React + TypeScript web app for clinical report ingestion, OCR, AI-assisted summarization and reporting. It combines a component library, Supabase authentication/storage, serverless functions for summarization, and OCR utilities to accelerate medical reporting workflows.
+Medsense AI (a.k.a. MedExplain) is a full-stack React + TypeScript application that helps ingest clinical reports (PDFs/images), extract readable text (OCR), and produce patient-friendly, structured summaries via an AI gateway. It is built with TanStack Start for SSR, Supabase for auth/storage, and serverless functions for AI integration.
 
 **Key Features ✨**
 
-- 🔍 **OCR Processing:** Server-side OCR utilities with helpers in `src/lib/ocr.ts` for extracting text from images/PDFs.
-- 🤖 **AI Summarization:** Serverless function at `supabase/functions/summarize-report/index.ts` for producing concise patient report summaries.
-- 🔐 **Authentication:** Supabase authentication integration with client and middleware helpers in `src/integrations/supabase`.
-- 🧩 **Responsive UI Components:** Reusable, accessible components in `src/components/ui` including forms, tables, dialogs and charts.
-- 🗺️ **Routing & Pages:** Route-driven layouts and pages in `src/routes` including dashboard, reports and auth flows.
-- 🛡️ **Error Capture & Theming:** Global error capturing and theme utilities in `src/lib/error-capture.ts` and `src/lib/theme.tsx`.
-- 🔌 **Extensible Integrations:** Placeholder integration for third-party services under `src/integrations`.
+- 🔍 OCR processing: `pdfjs-dist` text-layer + `tesseract.js` raster OCR fallback (`src/lib/ocr.ts`).
+- 🤖 Structured AI summaries: `supabase/functions/summarize-report/index.ts` returns typed JSON summaries.
+- 🔐 Supabase authentication and storage: client and server helpers in `src/integrations/supabase`.
+- 🧩 Reusable UI: accessible components under `src/components/ui` (buttons, forms, tables, dialogs).
+- 🗺️ Routing & SSR: TanStack Start + Router for route-driven SSR and server functions.
+- 🛡️ Error capture & theming: centralized error capture and theme utilities in `src/lib`.
 
-## Quickstart 🚀
+## Table of Contents
 
-Requirements:
+- [Quickstart](#quickstart)
+- [Environment Variables](#environment-variables)
+- [Development](#development)
+- [Architecture](#architecture)
+- [Deployment](#deployment)
+- [Testing & Linting](#testing--linting)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
 
-- Node.js 18+ (or LTS)
-- pnpm, npm or yarn
-- A Supabase project (optional but recommended for auth & storage)
+## Quickstart
+
+Prerequisites
+
+- Node.js 18+ (LTS recommended)
+- `npm`, `pnpm` or `yarn`
+- (Optional) Supabase project and CLI for deploying functions
 
 Install dependencies:
 
@@ -28,77 +39,108 @@ Install dependencies:
 npm install
 # or
 pnpm install
-# or
-yarn
 ```
 
-Create an environment file by copying the example (if present) and adding your keys:
+Create a local env file from the provided example and fill in your keys (do not commit `.env`):
 
 ```powershell
 copy .env.example .env
-# then edit .env to add SUPABASE_URL, SUPABASE_ANON_KEY, etc.
+# Edit .env and add SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY, AI_GATEWAY_URL, AI_API_KEY, etc.
 ```
 
-Development server:
+Start development server (client + SSR):
 
 ```bash
 npm run dev
-# or
-pnpm dev
 ```
 
-Build for production:
+Build and preview production bundle:
 
 ```bash
 npm run build
 npm run preview
 ```
 
-Serverless function (Supabase) local test:
+## Development
+
+- Frontend entry: Vite + TanStack Start (see `vite.config.ts`).
+- Server entry: `src/server.ts` routes to the TanStack Start server entry.
+- Routes: `src/routes/*` — route files are file-based and support server loaders and functions.
+- OCR pipeline: `src/lib/ocr.ts` uses `pdfjs-dist` for PDFs and `tesseract.js` for image OCR.
+- Summarization: Frontend calls Supabase function `summarize-report`, implemented in `supabase/functions/summarize-report/index.ts`.
+
+Common dev tasks:
+
+- Format code:
 
 ```bash
-# follow Supabase functions local dev docs; example:
-supabase functions serve
+npm run format
 ```
 
-## Configuration
+- Lint (fixable issues can be auto-fixed):
 
-- Environment variables: put secrets in `.env` — typical keys include `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
-- `wrangler.jsonc` may be present if deploying to Cloudflare Workers.
-- `bunfig.toml` and `vite.config.ts` contain build/runtime settings.
+```bash
+npm run lint -- --fix
+```
 
-## Project Structure (high-level)
+## Architecture & File Layout
 
-- `src/` — application source
-  - `components/` — shared UI components
-  - `integrations/` — service clients (Supabase, third-party)
-  - `lib/` — helpers: auth, theme, OCR, utils, error capture
-  - `routes/` — route components and pages
-- `supabase/functions/` — serverless functions (e.g., summarization)
+- `src/` — application code
+  - `components/` — UI primitives and design system
+  - `integrations/` — Supabase clients and middleware
+  - `lib/` — helpers and utilities (OCR, auth context, theme, error capture)
+  - `routes/` — pages (file-based routing)
+- `supabase/functions/` — serverless functions (summarize-report)
 - `migrations/` — SQL migrations for Supabase
 
-## How to Use
+Key workflows:
 
-- Sign up / sign in via the auth route.
-- Upload clinical reports (images / PDFs) to trigger OCR.
-- Run the summarize function to generate an AI-assisted summary.
-- Review and export summaries from the dashboard.
+1. Upload file -> store in Supabase storage
+2. Extract text via OCR helpers
+3. Invoke serverless summarization
+4. Save summary JSON to `reports` table
+5. Render summary and allow export (TXT/PDF)
 
 ## Deployment
 
-- Static site + serverless: Build and deploy the frontend (Vite) and deploy serverless functions to Supabase functions or Cloudflare Workers / other platforms.
-- Supabase: Use `supabase` CLI to deploy functions and migrations.
+Frontend
+
+- Build with `npm run build`. Deploy the `dist/` output to Vercel, Netlify, Cloudflare Pages, or any static host.
+
+Serverless functions
+
+- Supabase Functions (recommended): Use the Supabase CLI to deploy `supabase/functions/summarize-report`.
+- Cloudflare Workers: `wrangler.jsonc` is present if you prefer Cloudflare for SSR or functions.
+
+CI
+
+- Add a simple GitHub Actions workflow that runs `npm ci`, `npm run lint -- --max-warnings=0`, and `npm run build` on PRs.
+
+## Testing & Linting
+
+- Formatting: `npm run format` (Prettier)
+- Linting: `npm run lint`
+
+Current status: The repository lints cleanly (no blocking errors) after formatting; a few `react-refresh` warnings may appear in UI components but are non-blocking.
+
+## Troubleshooting
+
+- Missing env variables: The app will throw an informative error listing missing keys. Check `.env` and `.env.example`.
+- Node engine warnings: If `npm install` warns about `EBADENGINE`, upgrade Node to the required version.
+- Large bundles: PDF worker and pdf.js can create large chunks; consider offloading heavy processing to serverless functions or using a CDN for the worker script.
 
 ## Contributing
 
-- Follow the existing project conventions in `src/`.
-- Run linting and tests (if present) before PRs.
-- Add changelog entries for user-visible changes.
+1. Fork the repo and create a feature branch.
+2. Follow the existing code style. Run `npm run format` and `npm run lint -- --fix` before committing.
+3. Open a PR with a clear summary of changes and any migration notes.
+
+If you want, I can add a `CONTRIBUTING.md` with a checklist template and PR guidelines.
 
 ## License
 
-Specify your license here (e.g., MIT) or add a `LICENSE` file.
+Add a `LICENSE` file (e.g., MIT) to make the repo open-source. Tell me which license you'd like and I will create the file.
 
-## Contact
+---
 
-If you'd like help customizing this README or adding repo badges, CI or publishing steps, tell me what you'd like and I can add them.
+If you want this README shortened, or extended with a developer guide (ERD, API examples, CI config), tell me which sections to add and I will update it.
