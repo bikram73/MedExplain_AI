@@ -1,0 +1,168 @@
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Activity, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
+
+export const Route = createFileRoute("/auth")({ component: AuthPage });
+
+const emailSchema = z.string().trim().email("Enter a valid email").max(255);
+const passwordSchema = z.string().min(8, "Min 8 characters").max(72);
+
+function AuthPage() {
+  const nav = useNavigate();
+  const { user, loading } = useAuth();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!loading && user) nav({ to: "/dashboard" });
+  }, [user, loading, nav]);
+
+  async function signIn(e: React.FormEvent) {
+    e.preventDefault();
+    const ep = emailSchema.safeParse(email);
+    if (!ep.success) return toast.error(ep.error.issues[0].message);
+    const pp = passwordSchema.safeParse(password);
+    if (!pp.success) return toast.error(pp.error.issues[0].message);
+    setBusy(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    nav({ to: "/dashboard" });
+  }
+
+  async function signUp(e: React.FormEvent) {
+    e.preventDefault();
+    const ep = emailSchema.safeParse(email);
+    if (!ep.success) return toast.error(ep.error.issues[0].message);
+    const pp = passwordSchema.safeParse(password);
+    if (!pp.success) return toast.error(pp.error.issues[0].message);
+    setBusy(true);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin + "/dashboard",
+        data: { full_name: name },
+      },
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Check your email to confirm your account.");
+  }
+
+  async function google() {
+    setBusy(true);
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin + "/dashboard" },
+    });
+    setBusy(false);
+    if (error) {
+      toast.error("Google sign-in failed");
+      return;
+    }
+    // Supabase will redirect for OAuth flows; if not, navigate to dashboard
+    nav({ to: "/dashboard" });
+  }
+
+  return (
+    <div className="grid min-h-screen place-items-center bg-background px-4">
+      <div className="w-full max-w-md">
+        <Link to="/" className="mb-6 flex items-center justify-center gap-2">
+          <div className="grid h-9 w-9 place-items-center rounded-lg gradient-medical">
+            <Activity className="h-4 w-4 text-white" />
+          </div>
+          <span className="text-xl font-bold">
+            MedExplain<span className="text-accent">.AI</span>
+          </span>
+        </Link>
+        <Card className="glass p-6">
+          <Tabs defaultValue="signin">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="signin">Sign in</TabsTrigger>
+              <TabsTrigger value="signup">Create account</TabsTrigger>
+            </TabsList>
+            <TabsContent value="signin" className="mt-4">
+              <form onSubmit={signIn} className="space-y-3">
+                <div>
+                  <Label>Email</Label>
+                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Password</Label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={busy}
+                  className="w-full gradient-medical text-white"
+                >
+                  {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Sign in
+                </Button>
+              </form>
+            </TabsContent>
+            <TabsContent value="signup" className="mt-4">
+              <form onSubmit={signUp} className="space-y-3">
+                <div>
+                  <Label>Full name</Label>
+                  <Input value={name} onChange={(e) => setName(e.target.value)} maxLength={100} />
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div>
+                  <Label>Password</Label>
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  disabled={busy}
+                  className="w-full gradient-medical text-white"
+                >
+                  {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Create account
+                </Button>
+              </form>
+            </TabsContent>
+          </Tabs>
+          <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
+            <div className="h-px flex-1 bg-border" />
+            or
+            <div className="h-px flex-1 bg-border" />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={google}
+            disabled={busy}
+          >
+            Continue with Google
+          </Button>
+        </Card>
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          By continuing you agree this tool is informational only, not medical advice.
+        </p>
+      </div>
+    </div>
+  );
+}
