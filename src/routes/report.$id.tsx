@@ -183,9 +183,9 @@ function ReportPage() {
   return (
     <div className="min-h-screen bg-background">
       <nav className="sticky top-0 z-50 glass">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <Button asChild variant="ghost" size="sm">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <Button asChild variant="ghost" size="sm" className="px-2 sm:px-3">
               <Link to="/dashboard">
                 <ArrowLeft className="mr-1 h-4 w-4" /> Back
               </Link>
@@ -199,7 +199,7 @@ function ReportPage() {
               </span>
             </div>
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex items-center justify-end gap-2 self-end sm:self-auto">
             <ThemeToggle />
             {s && (
               <>
@@ -217,14 +217,14 @@ function ReportPage() {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-        <h1 className="text-2xl font-bold">{report.filename}</h1>
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+        <h1 className="break-words text-xl font-bold sm:text-2xl">{report.filename}</h1>
         <p className="text-sm text-muted-foreground">
           Uploaded {new Date(report.created_at).toLocaleString()}
         </p>
 
         {s?.emergency_alert?.present && (
-          <Card className="mt-4 border-destructive bg-destructive/5 p-4">
+          <Card className="mt-4 border-destructive bg-destructive/5 p-3 sm:p-4">
             <div className="flex items-start gap-3">
               <AlertTriangle className="mt-0.5 h-5 w-5 text-destructive" />
               <div>
@@ -235,15 +235,15 @@ function ReportPage() {
           </Card>
         )}
 
-        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)]">
+        <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)]">
           {/* Original */}
           <Card className="overflow-hidden">
             <div className="border-b p-3 text-sm font-semibold">Original file</div>
             {fileUrl ? (
               report.mime_type === "application/pdf" ? (
-                <iframe src={fileUrl} className="h-[70vh] w-full" title="original" />
+                <iframe src={fileUrl} className="h-[45vh] w-full sm:h-[70vh]" title="original" />
               ) : (
-                <img src={fileUrl} alt="report" className="max-h-[70vh] w-full object-contain" />
+                <img src={fileUrl} alt="report" className="max-h-[45vh] w-full object-contain sm:max-h-[70vh]" />
               )
             ) : (
               <div className="p-6 text-sm text-muted-foreground">Preview unavailable</div>
@@ -265,7 +265,7 @@ function ReportPage() {
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
-            <ScrollArea className="h-[70vh] p-4 text-sm whitespace-pre-wrap font-mono">
+            <ScrollArea className="h-[45vh] p-4 text-sm whitespace-pre-wrap font-mono sm:h-[70vh]">
               {report.extracted_text || "—"}
             </ScrollArea>
           </Card>
@@ -280,7 +280,7 @@ function ReportPage() {
                 </Badge>
               )}
             </div>
-            <ScrollArea className="h-[70vh] p-5">
+            <ScrollArea className="h-[45vh] p-4 sm:h-[70vh] sm:p-5">
               {!s ? (
                 <div className="text-sm text-muted-foreground">Summary not available.</div>
               ) : (
