@@ -112,14 +112,10 @@ async function handleDeleteAccountRequest(req: any, res: any) {
   }
 
   const userId = userData.user.id;
-  const [{ data: profile }, { data: reports }, { data: authUser }] = await Promise.all([
-    supabaseAdmin.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
-    supabaseAdmin.from("reports").select("file_path").eq("user_id", userId),
-    supabaseAdmin.auth.admin.getUserById(userId),
-  ]);
-
-  const email = authUser.user?.email;
-  const displayName = profile?.full_name || email || "MedExplain AI user";
+  const { data: reports } = await supabaseAdmin
+    .from("reports")
+    .select("file_path")
+    .eq("user_id", userId);
   const filePaths = (reports || [])
     .map((report: { file_path: string | null }) => report.file_path)
     .filter((path: string | null): path is string => Boolean(path));
@@ -134,24 +130,6 @@ async function handleDeleteAccountRequest(req: any, res: any) {
     res.setHeader("content-type", "application/json; charset=utf-8");
     res.end(JSON.stringify({ error: deleteResult.error.message || "Failed to delete account" }));
     return;
-  }
-
-  if (email) {
-    try {
-      const { from, transporter } = getMailer();
-      await transporter.sendMail({
-        from,
-        to: email,
-        subject: "Your MedExplain.AI account has been deleted",
-        text:
-          `Hi ${displayName},\n\nYour MedExplain.AI account has been deleted. You will lose all MedExplain AI data associated with this account, including uploaded reports and summaries. If this was not you, please contact support immediately.`,
-        html: toHtml(
-          `Hi ${displayName},\n\nYour MedExplain.AI account has been deleted. You will lose all MedExplain AI data associated with this account, including uploaded reports and summaries. If this was not you, please contact support immediately.`,
-        ),
-      });
-    } catch (error) {
-      console.error("Failed to send deletion email", error);
-    }
   }
 
   res.setHeader("content-type", "application/json; charset=utf-8");
