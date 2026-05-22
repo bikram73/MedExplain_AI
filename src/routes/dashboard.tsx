@@ -150,8 +150,8 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <nav className="sticky top-0 z-50 glass">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <Link to="/" className="flex items-center gap-2">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
+          <Link to="/" className="flex shrink-0 items-center gap-2">
             <div className="grid h-8 w-8 place-items-center rounded-lg gradient-medical">
               <Activity className="h-4 w-4 text-white" />
             </div>
@@ -159,7 +159,7 @@ function Dashboard() {
               MedExplain<span className="text-accent">.AI</span>
             </span>
           </Link>
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
             <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
             <Button asChild variant="ghost" size="icon" className="rounded-full">
               <Link to="/profile" aria-label="Open profile settings">
@@ -167,7 +167,7 @@ function Dashboard() {
               </Link>
             </Button>
             <ThemeToggle />
-            <Button variant="outline" onClick={signOut}>
+            <Button variant="outline" size="sm" onClick={signOut} className="px-3 sm:px-4">
               Sign out
             </Button>
           </div>
