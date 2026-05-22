@@ -265,9 +265,6 @@ function ProfilePage() {
                       This action is permanent. If you delete your account, you will lose every
                       MedExplain AI report, summary, and uploaded file tied to this account.
                     </p>
-                    <p>
-                      We will send a confirmation email after the deletion is complete.
-                    </p>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

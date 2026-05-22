@@ -48,6 +48,28 @@ function getSupabaseAdminClient() {
   return supabaseAdminClient;
 }
 
+function getSupabaseUserClient(token: string) {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+
+  if (!supabaseUrl || !publishableKey) {
+    throw new Error("Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY");
+  }
+
+  return createClient(supabaseUrl, publishableKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+    auth: {
+      storage: undefined,
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+}
+
 function getRequestUrl(req: any): URL {
   const incomingUrl = req.url || "/";
   const host = req.headers && (req.headers.host || req.headers[":authority"])
@@ -101,8 +123,8 @@ async function handleDeleteAccountRequest(req: any, res: any) {
   }
 
   const token = String(authHeader).replace("Bearer ", "");
-  const supabaseAdmin = getSupabaseAdminClient();
-  const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
+  const supabaseUser = getSupabaseUserClient(token);
+  const { data: userData, error: userError } = await supabaseUser.auth.getUser(token);
 
   if (userError || !userData?.user?.id) {
     res.statusCode = 401;
@@ -112,7 +134,7 @@ async function handleDeleteAccountRequest(req: any, res: any) {
   }
 
   const userId = userData.user.id;
-  const { data: reports } = await supabaseAdmin
+  const { data: reports } = await supabaseUser
     .from("reports")
     .select("file_path")
     .eq("user_id", userId);
@@ -121,9 +143,21 @@ async function handleDeleteAccountRequest(req: any, res: any) {
     .filter((path: string | null): path is string => Boolean(path));
 
   if (filePaths.length > 0) {
-    await supabaseAdmin.storage.from("medical-reports").remove(filePaths);
+    await supabaseUser.storage.from("medical-reports").remove(filePaths);
   }
 
+  await Promise.all([
+    supabaseUser.from("reports").delete().eq("user_id", userId),
+    supabaseUser.from("profiles").delete().eq("id", userId),
+  ]);
+
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    res.setHeader("content-type", "application/json; charset=utf-8");
+    res.end(JSON.stringify({ ok: true, mode: "data-only" }));
+    return;
+  }
+
+  const supabaseAdmin = getSupabaseAdminClient();
   const deleteResult = await supabaseAdmin.auth.admin.deleteUser(userId);
   if (deleteResult.error) {
     res.statusCode = 500;
