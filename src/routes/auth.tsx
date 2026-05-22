@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Activity, Loader2 } from "lucide-react";
+import { Activity, ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -79,6 +79,13 @@ function AuthPage() {
   return (
     <div className="grid min-h-screen place-items-center bg-background px-4 py-6 sm:py-10">
       <div className="w-full max-w-sm sm:max-w-md">
+        <div className="mb-4 flex justify-start sm:mb-6">
+          <Button asChild variant="ghost" className="gap-2 px-0 text-sm text-muted-foreground hover:text-foreground">
+            <Link to="/">
+              <ArrowLeft className="h-4 w-4" /> Back to home
+            </Link>
+          </Button>
+        </div>
         <Link to="/" className="mb-6 flex items-center justify-center gap-2">
           <div className="grid h-9 w-9 place-items-center rounded-lg gradient-medical">
             <Activity className="h-4 w-4 text-white" />
