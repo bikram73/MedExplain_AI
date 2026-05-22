@@ -4,7 +4,7 @@
 // The Edge runtime rejected several TanStack modules; run this as a Node serverless function instead.
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
-// @ts-expect-error Build output module is generated during `vite build`.
+// @ts-ignore Build output module is generated during `vite build`.
 import server from "../dist/server/server.js";
 
 export const config = {
