@@ -61,21 +61,6 @@ function AuthPage() {
     toast.success("Check your email to confirm your account.");
   }
 
-  async function google() {
-    setBusy(true);
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: window.location.origin + "/dashboard" },
-    });
-    setBusy(false);
-    if (error) {
-      toast.error("Google sign-in failed");
-      return;
-    }
-    // Supabase will redirect for OAuth flows; if not, navigate to dashboard
-    nav({ to: "/dashboard" });
-  }
-
   return (
     <div className="grid min-h-screen place-items-center bg-background px-4 py-6 sm:py-10">
       <div className="w-full max-w-sm sm:max-w-md">
@@ -151,20 +136,6 @@ function AuthPage() {
               </form>
             </TabsContent>
           </Tabs>
-          <div className="my-4 flex items-center gap-3 text-xs text-muted-foreground">
-            <div className="h-px flex-1 bg-border" />
-            or
-            <div className="h-px flex-1 bg-border" />
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={google}
-            disabled={busy}
-          >
-            Continue with Google
-          </Button>
         </Card>
         <p className="mt-6 text-center text-xs text-muted-foreground">
           By continuing you agree this tool is informational only, not medical advice.
