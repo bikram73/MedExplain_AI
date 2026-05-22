@@ -25,13 +25,26 @@ type EmailNotificationRow = {
 
 let supabaseAdminClient: any;
 
+function readEnv(name: string) {
+  const raw = process.env[name];
+  if (!raw) return undefined;
+  const trimmed = raw.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
 function getSupabaseAdminClient() {
   if (supabaseAdminClient) {
     return supabaseAdminClient;
   }
 
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = readEnv("SUPABASE_URL");
+  const serviceRoleKey = readEnv("SUPABASE_SERVICE_ROLE_KEY");
 
   if (!supabaseUrl || !serviceRoleKey) {
     throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
@@ -49,8 +62,8 @@ function getSupabaseAdminClient() {
 }
 
 function getSupabaseUserClient(token: string) {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+  const supabaseUrl = readEnv("SUPABASE_URL");
+  const publishableKey = readEnv("SUPABASE_PUBLISHABLE_KEY");
 
   if (!supabaseUrl || !publishableKey) {
     throw new Error("Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY");
@@ -80,9 +93,9 @@ function getRequestUrl(req: any): URL {
 }
 
 function getMailer() {
-  const user = process.env.EMAIL_USER;
-  const pass = process.env.EMAIL_PASS;
-  const from = process.env.EMAIL_FROM || user;
+  const user = readEnv("EMAIL_USER");
+  const pass = readEnv("EMAIL_PASS");
+  const from = readEnv("EMAIL_FROM") || user;
 
   if (!user || !pass || !from) {
     throw new Error("Missing EMAIL_USER, EMAIL_PASS, or EMAIL_FROM");
@@ -91,9 +104,9 @@ function getMailer() {
   return {
     from,
     transporter: nodemailer.createTransport({
-      host: process.env.SMTP_HOST || "smtp.gmail.com",
-      port: Number(process.env.SMTP_PORT || 587),
-      secure: (process.env.SMTP_SECURE || "false").toLowerCase() === "true",
+      host: readEnv("SMTP_HOST") || "smtp.gmail.com",
+      port: Number(readEnv("SMTP_PORT") || 587),
+      secure: (readEnv("SMTP_SECURE") || "false").toLowerCase() === "true",
       auth: { user, pass },
     }),
   };
@@ -151,7 +164,7 @@ async function handleDeleteAccountRequest(req: any, res: any) {
     supabaseUser.from("profiles").delete().eq("id", userId),
   ]);
 
-  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+  if (!readEnv("SUPABASE_SERVICE_ROLE_KEY")) {
     res.setHeader("content-type", "application/json; charset=utf-8");
     res.end(JSON.stringify({ ok: true, mode: "data-only" }));
     return;
@@ -179,7 +192,7 @@ async function handleCronRequest(req: any, res: any) {
   }
 
   const url = getRequestUrl(req);
-  const expectedSecret = process.env.MAIL_CRON_SECRET;
+  const expectedSecret = readEnv("MAIL_CRON_SECRET");
   const providedSecret = url.searchParams.get("secret") || undefined;
 
   if (expectedSecret && providedSecret !== expectedSecret) {
@@ -191,10 +204,10 @@ async function handleCronRequest(req: any, res: any) {
 
   try {
     const missing: string[] = [];
-    if (!process.env.SUPABASE_URL) missing.push("SUPABASE_URL");
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
-    if (!process.env.EMAIL_USER) missing.push("EMAIL_USER");
-    if (!process.env.EMAIL_PASS) missing.push("EMAIL_PASS");
+    if (!readEnv("SUPABASE_URL")) missing.push("SUPABASE_URL");
+    if (!readEnv("SUPABASE_SERVICE_ROLE_KEY")) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+    if (!readEnv("EMAIL_USER")) missing.push("EMAIL_USER");
+    if (!readEnv("EMAIL_PASS")) missing.push("EMAIL_PASS");
 
     if (missing.length > 0) {
       res.statusCode = 500;
