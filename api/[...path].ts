@@ -102,16 +102,16 @@ async function handleDeleteAccountRequest(req: any, res: any) {
 
   const token = String(authHeader).replace("Bearer ", "");
   const supabaseAdmin = getSupabaseAdminClient();
-  const { data: claimsData, error: claimsError } = await supabaseAdmin.auth.getClaims(token);
+  const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
 
-  if (claimsError || !claimsData?.claims?.sub) {
+  if (userError || !userData?.user?.id) {
     res.statusCode = 401;
     res.setHeader("content-type", "application/json; charset=utf-8");
     res.end(JSON.stringify({ error: "Unauthorized" }));
     return;
   }
 
-  const userId = claimsData.claims.sub;
+  const userId = userData.user.id;
   const [{ data: profile }, { data: reports }, { data: authUser }] = await Promise.all([
     supabaseAdmin.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
     supabaseAdmin.from("reports").select("file_path").eq("user_id", userId),
