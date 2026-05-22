@@ -2,9 +2,10 @@
 
 // Use the server bundle produced by `npm run build`.
 // The Edge runtime rejected several TanStack modules; run this as a Node serverless function instead.
+import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+// @ts-expect-error Build output module is generated during `vite build`.
 import server from "../dist/server/server.js";
-import { supabaseAdmin } from "../src/integrations/supabase/client.server";
 
 export const config = {
   runtime: "nodejs",
@@ -21,6 +22,31 @@ type EmailNotificationRow = {
   error_message: string | null;
   created_at: string;
 };
+
+let supabaseAdminClient: any;
+
+function getSupabaseAdminClient() {
+  if (supabaseAdminClient) {
+    return supabaseAdminClient;
+  }
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+  }
+
+  supabaseAdminClient = createClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      storage: undefined,
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+
+  return supabaseAdminClient;
+}
 
 function getRequestUrl(req: any): URL {
   const incomingUrl = req.url || "/";
@@ -78,6 +104,7 @@ async function handleCronRequest(req: any, res: any) {
   }
 
   const { from, transporter } = getMailer();
+  const supabaseAdmin = getSupabaseAdminClient();
   const { data: notifications, error: selectError } = await supabaseAdmin
     .from("email_notifications")
     .select("id,user_id,email,type,subject,body,sent_at,error_message,created_at")
