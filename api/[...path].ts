@@ -189,59 +189,95 @@ async function handleCronRequest(req: any, res: any) {
     return;
   }
 
-  const { from, transporter } = getMailer();
-  const supabaseAdmin = getSupabaseAdminClient();
-  const { data: notifications, error: selectError } = await supabaseAdmin
-    .from("email_notifications")
-    .select("id,user_id,email,type,subject,body,sent_at,error_message,created_at")
-    .is("sent_at", null)
-    .order("created_at", { ascending: true })
-    .limit(25);
+  try {
+    const missing: string[] = [];
+    if (!process.env.SUPABASE_URL) missing.push("SUPABASE_URL");
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+    if (!process.env.EMAIL_USER) missing.push("EMAIL_USER");
+    if (!process.env.EMAIL_PASS) missing.push("EMAIL_PASS");
 
-  if (selectError) {
-    console.error("Failed to read queued emails", selectError);
+    if (missing.length > 0) {
+      res.statusCode = 500;
+      res.setHeader("content-type", "application/json; charset=utf-8");
+      res.end(JSON.stringify({
+        error: "Missing required server environment variables",
+        missing,
+      }));
+      return;
+    }
+
+    const { from, transporter } = getMailer();
+    const verifyResult = await transporter.verify().then(() => ({ ok: true as const })).catch((error) => ({
+      ok: false as const,
+      message: error instanceof Error ? error.message : "SMTP verify failed",
+    }));
+
+    if (!verifyResult.ok) {
+      res.statusCode = 500;
+      res.setHeader("content-type", "application/json; charset=utf-8");
+      res.end(JSON.stringify({ error: "SMTP connection failed", detail: verifyResult.message }));
+      return;
+    }
+
+    const supabaseAdmin = getSupabaseAdminClient();
+    const { data: notifications, error: selectError } = await supabaseAdmin
+      .from("email_notifications")
+      .select("id,user_id,email,type,subject,body,sent_at,error_message,created_at")
+      .is("sent_at", null)
+      .order("created_at", { ascending: true })
+      .limit(25);
+
+    if (selectError) {
+      console.error("Failed to read queued emails", selectError);
+      res.statusCode = 500;
+      res.setHeader("content-type", "application/json; charset=utf-8");
+      res.end(JSON.stringify({ error: "Failed to read queued emails", detail: selectError.message }));
+      return;
+    }
+
+    let sent = 0;
+    let failed = 0;
+
+    for (const notification of (notifications || []) as EmailNotificationRow[]) {
+      try {
+        await transporter.sendMail({
+          from,
+          to: notification.email,
+          subject: notification.subject,
+          text: notification.body,
+          html: toHtml(notification.body),
+        });
+
+        const { error: updateError } = await supabaseAdmin
+          .from("email_notifications")
+          .update({ sent_at: new Date().toISOString(), error_message: null })
+          .eq("id", notification.id);
+
+        if (updateError) {
+          throw updateError;
+        }
+
+        sent += 1;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown mail error";
+        failed += 1;
+        await supabaseAdmin
+          .from("email_notifications")
+          .update({ error_message: message })
+          .eq("id", notification.id);
+        console.error("Failed to send queued email", { id: notification.id, error: message });
+      }
+    }
+
+    res.setHeader("content-type", "application/json; charset=utf-8");
+    res.end(JSON.stringify({ ok: true, sent, failed, processed: (notifications || []).length }));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown cron error";
+    console.error("Cron handler failed", error);
     res.statusCode = 500;
     res.setHeader("content-type", "application/json; charset=utf-8");
-    res.end(JSON.stringify({ error: "Failed to read queued emails" }));
-    return;
+    res.end(JSON.stringify({ error: "Cron handler failed", detail: message }));
   }
-
-  let sent = 0;
-  let failed = 0;
-
-  for (const notification of (notifications || []) as EmailNotificationRow[]) {
-    try {
-      await transporter.sendMail({
-        from,
-        to: notification.email,
-        subject: notification.subject,
-        text: notification.body,
-        html: toHtml(notification.body),
-      });
-
-      const { error: updateError } = await supabaseAdmin
-        .from("email_notifications")
-        .update({ sent_at: new Date().toISOString(), error_message: null })
-        .eq("id", notification.id);
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      sent += 1;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Unknown mail error";
-      failed += 1;
-      await supabaseAdmin
-        .from("email_notifications")
-        .update({ error_message: message })
-        .eq("id", notification.id);
-      console.error("Failed to send queued email", { id: notification.id, error: message });
-    }
-  }
-
-  res.setHeader("content-type", "application/json; charset=utf-8");
-  res.end(JSON.stringify({ ok: true, sent, failed, processed: (notifications || []).length }));
 }
 
 export default async function handler(req: any, res: any) {
