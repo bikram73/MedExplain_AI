@@ -5,17 +5,6 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,12 +19,11 @@ const passwordSchema = z.string().min(8, "Min 8 characters").max(72);
 
 function ProfilePage() {
   const nav = useNavigate();
-  const { user, loading, signOut } = useAuth();
+  const { user, loading } = useAuth();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const newPasswordRef = useRef<HTMLInputElement>(null);
 
@@ -116,37 +104,6 @@ function ProfilePage() {
     }
   }
 
-  async function deleteAccount() {
-    if (!user) return;
-
-    setDeleting(true);
-    try {
-      const session = await supabase.auth.getSession();
-      const token = session.data.session?.access_token;
-      if (!token) throw new Error("Your session expired. Please sign in again.");
-
-      const response = await fetch("/api/account/delete", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(payload.error || "Failed to delete account");
-      }
-
-      toast.success(
-        "Your account has been deleted. You have lost all MedExplain AI data tied to this account.",
-      );
-      await signOut();
-      nav({ to: "/" });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to delete account");
-    } finally {
-      setDeleting(false);
-    }
-  }
-
   if (loading || !user || !loaded) {
     return (
       <div className="grid min-h-screen place-items-center bg-background">
@@ -173,9 +130,7 @@ function ProfilePage() {
       <main className="mx-auto max-w-4xl px-6 py-10">
         <div className="max-w-2xl">
           <h1 className="text-3xl font-bold">Your profile</h1>
-          <p className="mt-2 text-muted-foreground">
-            Edit your account details, update your password, or delete your account.
-          </p>
+          <p className="mt-2 text-muted-foreground">Edit your account details or update your password.</p>
         </div>
 
         <form onSubmit={saveProfile} className="mt-8 space-y-6">
@@ -249,40 +204,6 @@ function ProfilePage() {
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Save changes
             </Button>
-
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" disabled={deleting}>
-                  {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Delete account
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete your MedExplain AI account?</AlertDialogTitle>
-                  <AlertDialogDescription className="space-y-2">
-                    <p>
-                      This action is permanent. If you delete your account, you will lose every
-                      MedExplain AI report, summary, and uploaded file tied to this account.
-                    </p>
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={(event) => {
-                      event.preventDefault();
-                      deleteAccount();
-                    }}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    disabled={deleting}
-                  >
-                    {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Delete permanently
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
           </div>
         </form>
       </main>
