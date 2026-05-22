@@ -115,8 +115,8 @@ function ProfilePage() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <Button asChild variant="ghost" className="gap-2 px-0">
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
+          <Button asChild variant="ghost" className="gap-2 px-0 text-sm sm:text-base">
             <Link to="/dashboard">
               <ArrowLeft className="h-4 w-4" /> Back to dashboard
             </Link>
@@ -127,9 +127,9 @@ function ProfilePage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl px-6 py-10">
+      <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
         <div className="max-w-2xl">
-          <h1 className="text-3xl font-bold">Your profile</h1>
+          <h1 className="text-2xl font-bold sm:text-3xl">Your profile</h1>
           <p className="mt-2 text-muted-foreground">Edit your account details or update your password.</p>
         </div>
 
@@ -173,7 +173,7 @@ function ProfilePage() {
               <h2 className="text-lg font-semibold">Password</h2>
             </div>
 
-            <div className="mb-4 flex items-center justify-between gap-4 rounded-lg border bg-muted/20 p-4">
+            <div className="mb-4 flex flex-col items-start justify-between gap-4 rounded-lg border bg-muted/20 p-4 sm:flex-row sm:items-center">
               <div>
                 <p className="text-sm font-medium">Current password</p>
                 <p className="text-sm text-muted-foreground">••••••••</p>
@@ -183,7 +183,7 @@ function ProfilePage() {
               </Button>
             </div>
 
-            <div className="space-y-2 max-w-lg">
+            <div className="max-w-lg space-y-2">
               <Label htmlFor="newPassword">New password</Label>
               <Input
                 id="newPassword"

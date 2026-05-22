@@ -144,8 +144,26 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    min-width: 320px;
+    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+    text-size-adjust: 100%;
   }
+
+  img,
+  video,
+  iframe,
+  canvas,
+  svg {
+    max-width: 100%;
+  }
+
+  img,
+  video,
+  canvas {
+    height: auto;
+  }
+
   h1,
   h2,
   h3,

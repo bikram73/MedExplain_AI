@@ -77,8 +77,8 @@ function AuthPage() {
   }
 
   return (
-    <div className="grid min-h-screen place-items-center bg-background px-4">
-      <div className="w-full max-w-md">
+    <div className="grid min-h-screen place-items-center bg-background px-4 py-6 sm:py-10">
+      <div className="w-full max-w-sm sm:max-w-md">
         <Link to="/" className="mb-6 flex items-center justify-center gap-2">
           <div className="grid h-9 w-9 place-items-center rounded-lg gradient-medical">
             <Activity className="h-4 w-4 text-white" />
@@ -87,9 +87,9 @@ function AuthPage() {
             MedExplain<span className="text-accent">.AI</span>
           </span>
         </Link>
-        <Card className="glass p-6">
+        <Card className="glass p-5 sm:p-6">
           <Tabs defaultValue="signin">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-2 text-sm sm:text-base">
               <TabsTrigger value="signin">Sign in</TabsTrigger>
               <TabsTrigger value="signup">Create account</TabsTrigger>
             </TabsList>

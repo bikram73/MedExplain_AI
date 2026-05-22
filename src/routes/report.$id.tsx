@@ -183,8 +183,8 @@ function ReportPage() {
   return (
     <div className="min-h-screen bg-background">
       <nav className="sticky top-0 z-50 glass">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-3">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <div className="flex flex-wrap items-center gap-3">
             <Button asChild variant="ghost" size="sm">
               <Link to="/dashboard">
                 <ArrowLeft className="mr-1 h-4 w-4" /> Back
@@ -199,7 +199,7 @@ function ReportPage() {
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <ThemeToggle />
             {s && (
               <>
@@ -217,7 +217,7 @@ function ReportPage() {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-7xl px-6 py-8">
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
         <h1 className="text-2xl font-bold">{report.filename}</h1>
         <p className="text-sm text-muted-foreground">
           Uploaded {new Date(report.created_at).toLocaleString()}
@@ -235,7 +235,7 @@ function ReportPage() {
           </Card>
         )}
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_1fr_1.2fr]">
+        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.2fr)]">
           {/* Original */}
           <Card className="overflow-hidden">
             <div className="border-b p-3 text-sm font-semibold">Original file</div>

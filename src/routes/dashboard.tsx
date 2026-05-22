@@ -150,7 +150,7 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <nav className="sticky top-0 z-50 glass">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <Link to="/" className="flex items-center gap-2">
             <div className="grid h-8 w-8 place-items-center rounded-lg gradient-medical">
               <Activity className="h-4 w-4 text-white" />
@@ -159,7 +159,7 @@ function Dashboard() {
               MedExplain<span className="text-accent">.AI</span>
             </span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
             <Button asChild variant="ghost" size="icon" className="rounded-full">
               <Link to="/profile" aria-label="Open profile settings">
@@ -174,7 +174,7 @@ function Dashboard() {
         </div>
       </nav>
 
-      <main className="mx-auto max-w-6xl px-6 py-10">
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <h1 className="text-3xl font-bold">Your reports</h1>
         <p className="mt-1 text-muted-foreground">
           Upload a medical report and get an instant patient-friendly summary.
@@ -234,9 +234,9 @@ function Dashboard() {
         </Card>
 
         {/* Search + list */}
-        <div className="mt-10 flex items-center justify-between gap-4">
+        <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-xl font-semibold">Recent reports</h2>
-          <div className="relative w-64">
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
@@ -254,8 +254,8 @@ function Dashboard() {
         ) : (
           <div className="mt-4 grid gap-3">
             {filtered.map((r) => (
-              <Card key={r.id} className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-3 min-w-0">
+              <Card key={r.id} className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
                     <FileText className="h-5 w-5" />
                   </div>

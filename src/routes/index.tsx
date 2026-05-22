@@ -18,11 +18,11 @@ function Landing() {
           <div className="absolute top-1/4 -left-32 h-96 w-96 rounded-full bg-primary blur-3xl" />
           <div className="absolute top-1/3 -right-32 h-96 w-96 rounded-full bg-accent blur-3xl" />
         </div>
-        <div className="mx-auto max-w-6xl px-6 pt-20 pb-24 text-center">
+        <div className="mx-auto max-w-6xl px-4 pt-16 pb-20 text-center sm:px-6 sm:pt-20 sm:pb-24">
           <div className="mx-auto inline-flex items-center gap-2 rounded-full border bg-card/60 px-4 py-1.5 text-sm text-muted-foreground backdrop-blur">
             <Sparkles className="h-3.5 w-3.5 text-accent" /> AI-powered medical insights
           </div>
-          <h1 className="mt-6 text-5xl font-extrabold tracking-tight md:text-6xl">
+          <h1 className="mt-6 text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl">
             Understand your{" "}
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               medical reports
@@ -47,7 +47,7 @@ function Landing() {
       </section>
 
       {/* Features */}
-      <section className="mx-auto max-w-6xl px-6 pb-20">
+      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
         <div className="grid gap-6 md:grid-cols-4">
           {[
             {
@@ -81,7 +81,7 @@ function Landing() {
       </section>
 
       {/* How it works */}
-      <section id="how" className="mx-auto max-w-6xl px-6 pb-24">
+      <section id="how" className="mx-auto max-w-6xl px-4 pb-24 sm:px-6">
         <h2 className="text-center text-3xl font-bold">How it works</h2>
         <div className="mt-12 grid gap-6 md:grid-cols-4">
           {[
@@ -118,7 +118,7 @@ function Nav() {
   const { user, signOut } = useAuth();
   return (
     <nav className="sticky top-0 z-50 glass">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
         <Link to="/" className="flex items-center gap-2">
           <div className="grid h-8 w-8 place-items-center rounded-lg gradient-medical">
             <Activity className="h-4 w-4 text-white" />
@@ -127,7 +127,7 @@ function Nav() {
             MedExplain<span className="text-accent">.AI</span>
           </span>
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <ThemeToggle />
           {user ? (
             <>
