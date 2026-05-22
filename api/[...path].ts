@@ -3,24 +3,11 @@
 // Use the server bundle produced by `npm run build`.
 // The Edge runtime rejected several TanStack modules; run this as a Node serverless function instead.
 import { createClient } from "@supabase/supabase-js";
-import nodemailer from "nodemailer";
 // @ts-ignore Build output module is generated during `vite build`.
 import server from "../dist/server/server.js";
 
 export const config = {
   runtime: "nodejs",
-};
-
-type EmailNotificationRow = {
-  id: string;
-  user_id: string;
-  email: string;
-  type: "welcome" | "first_login";
-  subject: string;
-  body: string;
-  sent_at: string | null;
-  error_message: string | null;
-  created_at: string;
 };
 
 let supabaseAdminClient: any;
@@ -92,33 +79,6 @@ function getRequestUrl(req: any): URL {
   return new URL(absoluteUrl);
 }
 
-function getMailer() {
-  const user = readEnv("EMAIL_USER");
-  const pass = readEnv("EMAIL_PASS");
-  const from = readEnv("EMAIL_FROM") || user;
-
-  if (!user || !pass || !from) {
-    throw new Error("Missing EMAIL_USER, EMAIL_PASS, or EMAIL_FROM");
-  }
-
-  return {
-    from,
-    transporter: nodemailer.createTransport({
-      host: readEnv("SMTP_HOST") || "smtp.gmail.com",
-      port: Number(readEnv("SMTP_PORT") || 587),
-      secure: (readEnv("SMTP_SECURE") || "false").toLowerCase() === "true",
-      auth: { user, pass },
-    }),
-  };
-}
-
-function toHtml(body: string) {
-  return body
-    .split("\n\n")
-    .map((paragraph) => `<p>${paragraph.replaceAll("\n", "<br />")}</p>`)
-    .join("");
-}
-
 async function handleDeleteAccountRequest(req: any, res: any) {
   if (req.method !== "POST") {
     res.statusCode = 405;
@@ -156,13 +116,29 @@ async function handleDeleteAccountRequest(req: any, res: any) {
     .filter((path: string | null): path is string => Boolean(path));
 
   if (filePaths.length > 0) {
-    await supabaseUser.storage.from("medical-reports").remove(filePaths);
+    const { error: storageError } = await supabaseUser.storage.from("medical-reports").remove(filePaths);
+    if (storageError) {
+      res.statusCode = 500;
+      res.setHeader("content-type", "application/json; charset=utf-8");
+      res.end(JSON.stringify({ error: storageError.message || "Failed to delete uploaded files" }));
+      return;
+    }
   }
 
-  await Promise.all([
+  const [reportsDelete, profilesDelete] = await Promise.all([
     supabaseUser.from("reports").delete().eq("user_id", userId),
     supabaseUser.from("profiles").delete().eq("id", userId),
   ]);
+
+  const cleanupErrors = [reportsDelete.error, profilesDelete.error].filter(Boolean);
+  if (cleanupErrors.length > 0) {
+    res.statusCode = 500;
+    res.setHeader("content-type", "application/json; charset=utf-8");
+    res.end(JSON.stringify({
+      error: cleanupErrors[0]?.message || "Failed to delete account data",
+    }));
+    return;
+  }
 
   if (!readEnv("SUPABASE_SERVICE_ROLE_KEY")) {
     res.setHeader("content-type", "application/json; charset=utf-8");
@@ -202,95 +178,14 @@ async function handleCronRequest(req: any, res: any) {
     return;
   }
 
-  try {
-    const missing: string[] = [];
-    if (!readEnv("SUPABASE_URL")) missing.push("SUPABASE_URL");
-    if (!readEnv("SUPABASE_SERVICE_ROLE_KEY")) missing.push("SUPABASE_SERVICE_ROLE_KEY");
-    if (!readEnv("EMAIL_USER")) missing.push("EMAIL_USER");
-    if (!readEnv("EMAIL_PASS")) missing.push("EMAIL_PASS");
-
-    if (missing.length > 0) {
-      res.statusCode = 500;
-      res.setHeader("content-type", "application/json; charset=utf-8");
-      res.end(JSON.stringify({
-        error: "Missing required server environment variables",
-        missing,
-      }));
-      return;
-    }
-
-    const { from, transporter } = getMailer();
-    const verifyResult = await transporter.verify().then(() => ({ ok: true as const })).catch((error) => ({
-      ok: false as const,
-      message: error instanceof Error ? error.message : "SMTP verify failed",
-    }));
-
-    if (!verifyResult.ok) {
-      res.statusCode = 500;
-      res.setHeader("content-type", "application/json; charset=utf-8");
-      res.end(JSON.stringify({ error: "SMTP connection failed", detail: verifyResult.message }));
-      return;
-    }
-
-    const supabaseAdmin = getSupabaseAdminClient();
-    const { data: notifications, error: selectError } = await supabaseAdmin
-      .from("email_notifications")
-      .select("id,user_id,email,type,subject,body,sent_at,error_message,created_at")
-      .is("sent_at", null)
-      .order("created_at", { ascending: true })
-      .limit(25);
-
-    if (selectError) {
-      console.error("Failed to read queued emails", selectError);
-      res.statusCode = 500;
-      res.setHeader("content-type", "application/json; charset=utf-8");
-      res.end(JSON.stringify({ error: "Failed to read queued emails", detail: selectError.message }));
-      return;
-    }
-
-    let sent = 0;
-    let failed = 0;
-
-    for (const notification of (notifications || []) as EmailNotificationRow[]) {
-      try {
-        await transporter.sendMail({
-          from,
-          to: notification.email,
-          subject: notification.subject,
-          text: notification.body,
-          html: toHtml(notification.body),
-        });
-
-        const { error: updateError } = await supabaseAdmin
-          .from("email_notifications")
-          .update({ sent_at: new Date().toISOString(), error_message: null })
-          .eq("id", notification.id);
-
-        if (updateError) {
-          throw updateError;
-        }
-
-        sent += 1;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown mail error";
-        failed += 1;
-        await supabaseAdmin
-          .from("email_notifications")
-          .update({ error_message: message })
-          .eq("id", notification.id);
-        console.error("Failed to send queued email", { id: notification.id, error: message });
-      }
-    }
-
-    res.setHeader("content-type", "application/json; charset=utf-8");
-    res.end(JSON.stringify({ ok: true, sent, failed, processed: (notifications || []).length }));
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown cron error";
-    console.error("Cron handler failed", error);
-    res.statusCode = 500;
-    res.setHeader("content-type", "application/json; charset=utf-8");
-    res.end(JSON.stringify({ error: "Cron handler failed", detail: message }));
-  }
+  res.setHeader("content-type", "application/json; charset=utf-8");
+  res.end(
+    JSON.stringify({
+      ok: true,
+      disabled: true,
+      message: "Cron-based signup/signin mail sending has been removed from this project.",
+    }),
+  );
 }
 
 export default async function handler(req: any, res: any) {

@@ -8,42 +8,6 @@ export type Database = {
   };
   public: {
     Tables: {
-      email_notifications: {
-        Row: {
-          body: string;
-          created_at: string;
-          email: string;
-          error_message: string | null;
-          id: string;
-          sent_at: string | null;
-          subject: string;
-          type: string;
-          user_id: string;
-        };
-        Insert: {
-          body: string;
-          created_at?: string;
-          email: string;
-          error_message?: string | null;
-          id?: string;
-          sent_at?: string | null;
-          subject: string;
-          type: string;
-          user_id: string;
-        };
-        Update: {
-          body?: string;
-          created_at?: string;
-          email?: string;
-          error_message?: string | null;
-          id?: string;
-          sent_at?: string | null;
-          subject?: string;
-          type?: string;
-          user_id?: string;
-        };
-        Relationships: [];
-      };
       profiles: {
         Row: {
           created_at: string;
