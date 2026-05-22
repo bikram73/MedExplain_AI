@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { ThemeToggle } from "@/lib/theme";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
-import { Activity, Upload, FileText, Loader2, Search, Trash2, ArrowRight } from "lucide-react";
+import { Activity, Upload, FileText, Loader2, Search, Trash2, ArrowRight, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { ACCEPTED_TYPES, MAX_BYTES, extractTextFromFile } from "@/lib/ocr";
 
@@ -161,6 +161,11 @@ function Dashboard() {
           </Link>
           <div className="flex items-center gap-2">
             <span className="hidden text-sm text-muted-foreground sm:inline">{user.email}</span>
+            <Button asChild variant="ghost" size="icon" className="rounded-full">
+              <Link to="/profile" aria-label="Open profile settings">
+                <UserRound className="h-4 w-4" />
+              </Link>
+            </Button>
             <ThemeToggle />
             <Button variant="outline" onClick={signOut}>
               Sign out

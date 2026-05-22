@@ -84,6 +84,80 @@ function toHtml(body: string) {
     .join("");
 }
 
+async function handleDeleteAccountRequest(req: any, res: any) {
+  if (req.method !== "POST") {
+    res.statusCode = 405;
+    res.setHeader("content-type", "application/json; charset=utf-8");
+    res.end(JSON.stringify({ error: "Method not allowed" }));
+    return;
+  }
+
+  const authHeader = req.headers?.authorization;
+  if (!authHeader || !String(authHeader).startsWith("Bearer ")) {
+    res.statusCode = 401;
+    res.setHeader("content-type", "application/json; charset=utf-8");
+    res.end(JSON.stringify({ error: "Unauthorized" }));
+    return;
+  }
+
+  const token = String(authHeader).replace("Bearer ", "");
+  const supabaseAdmin = getSupabaseAdminClient();
+  const { data: claimsData, error: claimsError } = await supabaseAdmin.auth.getClaims(token);
+
+  if (claimsError || !claimsData?.claims?.sub) {
+    res.statusCode = 401;
+    res.setHeader("content-type", "application/json; charset=utf-8");
+    res.end(JSON.stringify({ error: "Unauthorized" }));
+    return;
+  }
+
+  const userId = claimsData.claims.sub;
+  const [{ data: profile }, { data: reports }, { data: authUser }] = await Promise.all([
+    supabaseAdmin.from("profiles").select("full_name").eq("id", userId).maybeSingle(),
+    supabaseAdmin.from("reports").select("file_path").eq("user_id", userId),
+    supabaseAdmin.auth.admin.getUserById(userId),
+  ]);
+
+  const email = authUser.user?.email;
+  const displayName = profile?.full_name || email || "MedExplain AI user";
+  const filePaths = (reports || [])
+    .map((report: { file_path: string | null }) => report.file_path)
+    .filter((path: string | null): path is string => Boolean(path));
+
+  if (filePaths.length > 0) {
+    await supabaseAdmin.storage.from("medical-reports").remove(filePaths);
+  }
+
+  const deleteResult = await supabaseAdmin.auth.admin.deleteUser(userId);
+  if (deleteResult.error) {
+    res.statusCode = 500;
+    res.setHeader("content-type", "application/json; charset=utf-8");
+    res.end(JSON.stringify({ error: deleteResult.error.message || "Failed to delete account" }));
+    return;
+  }
+
+  if (email) {
+    try {
+      const { from, transporter } = getMailer();
+      await transporter.sendMail({
+        from,
+        to: email,
+        subject: "Your MedExplain.AI account has been deleted",
+        text:
+          `Hi ${displayName},\n\nYour MedExplain.AI account has been deleted. You will lose all MedExplain AI data associated with this account, including uploaded reports and summaries. If this was not you, please contact support immediately.`,
+        html: toHtml(
+          `Hi ${displayName},\n\nYour MedExplain.AI account has been deleted. You will lose all MedExplain AI data associated with this account, including uploaded reports and summaries. If this was not you, please contact support immediately.`,
+        ),
+      });
+    } catch (error) {
+      console.error("Failed to send deletion email", error);
+    }
+  }
+
+  res.setHeader("content-type", "application/json; charset=utf-8");
+  res.end(JSON.stringify({ ok: true }));
+}
+
 async function handleCronRequest(req: any, res: any) {
   if (req.method !== "GET" && req.method !== "POST") {
     res.statusCode = 405;
@@ -161,6 +235,11 @@ async function handleCronRequest(req: any, res: any) {
 export default async function handler(req: any, res: any) {
   try {
     const url = getRequestUrl(req);
+
+    if (url.pathname === "/api/account/delete") {
+      await handleDeleteAccountRequest(req, res);
+      return;
+    }
 
     if (url.pathname === "/api/cron/send-mails") {
       await handleCronRequest(req, res);
