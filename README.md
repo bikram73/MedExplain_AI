@@ -101,41 +101,6 @@ Key workflows:
 4. Save summary JSON to `reports` table
 5. Render summary and allow export (TXT/PDF)
 
-## Deployment
-
-### Vercel
-
-This repo is configured for Vercel deployment with:
-
-- `vercel.json` for the build command and route rewrites
-- `api/[...path].ts` as the edge entry that forwards requests to the TanStack Start server
-
-Deploy steps:
-
-1. Push the repo to GitHub.
-2. Import the GitHub repo in Vercel.
-3. Set the project root to this workspace.
-4. Add the environment variables from `.env.example` in Vercel Project Settings.
-5. Use the default build command from `vercel.json`.
-
-Important env vars for Vercel:
-
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_PUBLISHABLE_KEY`
-- `SUPABASE_URL`
-- `SUPABASE_PUBLISHABLE_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `AI_GATEWAY_URL`
-- `AI_API_KEY`
-
-### Supabase Functions
-
-- Use the Supabase CLI to deploy `supabase/functions/summarize-report`.
-
-CI
-
-- Add a simple GitHub Actions workflow that runs `npm ci`, `npm run lint -- --max-warnings=0`, and `npm run build` on PRs.
-
 ## Testing & Linting
 
 - Formatting: `npm run format` (Prettier)
